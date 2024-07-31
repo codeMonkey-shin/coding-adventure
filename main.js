@@ -17,7 +17,7 @@ const challenges = [
     title: "미션: 조건문 사용하기",
     description: "출력 결과가 <strong>x is greater than 5</strong>가 되어야 합니다.",
     expectedOutput: "x is greater than 5",
-    initialCode: `// 조건문을 사용하여 x가 5보다 크면 메시지를 출력하세요\nlet x = 10;\nif ( ) {\n  console.log("");\n}`,
+    initialCode: `// 조건문을 사용하여 x가 5보다 크면 메시지를 출력하세요\nlet x = 10;\nif ( ) {\n  console.log("x is greater than 5");\n}`,
     hint: "if 조건문을 사용하여 x가 5보다 큰지 확인한 후, 조건이 참일 때 메시지를 출력하세요."
   }
 ];
@@ -59,15 +59,40 @@ document.getElementById('run-code').addEventListener('click', () => {
     if (outputContainer.textContent.trim() === challenges[currentChallengeIndex].expectedOutput) {
       currentChallengeIndex++;
       if (currentChallengeIndex < challenges.length) {
-        alert('성공! 다음 미션으로 이동합니다.');
+        showModal('성공! 다음 미션으로 이동합니다.');
         loadChallenge(currentChallengeIndex);
       } else {
-        alert('축하합니다! 모든 미션을 완료했습니다.');
+        showModal('축하합니다! 모든 미션을 완료했습니다. 당신은 네카라쿠배에 입사할 자격을 얻었습니다.', true);
       }
     } else {
-      alert('미션 실패. 코드를 다시 확인해 주세요.');
+      showModal('미션 실패. 코드를 다시 확인해 주세요.');
     }
   } catch (e) {
     document.getElementById('output').innerHTML = `Error: ${e.message}`;
+  }
+});
+
+function showModal(message, redirect = false) {
+  const modal = document.getElementById('modal');
+  const modalText = document.getElementById('modal-text');
+  modalText.textContent = message;
+  modal.style.display = 'block';
+
+  if (redirect) {
+    document.querySelector('.close').addEventListener('click', () => {
+      modal.style.display = 'none';
+      window.location.href = 'https://recruit.navercorp.com/rcrt/list.do';
+    });
+  } else {
+    document.querySelector('.close').addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+  }
+}
+
+window.addEventListener('click', (event) => {
+  const modal = document.getElementById('modal');
+  if (event.target === modal) {
+    modal.style.display = 'none';
   }
 });
