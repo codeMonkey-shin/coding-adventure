@@ -9,23 +9,30 @@
   <script src="main.js" defer></script>
 </head>
 <body>
-  <h1>코딩 어드벤처</h1>
-  <div id="coding-challenge">
-    <h2 id="mission-title">미션: 변수에 값을 할당하고 출력하기</h2>
-    <p id="mission-description">출력 결과가 <strong>Hello, World!</strong>가 되어야 합니다.</p>
-    <div id="editor-container"></div>
-    <button id="run-code">코드 실행</button>
-    <pre id="output"></pre>
-    <h3>힌트</h3>
-    <p id="hint"></p>
-  </div>
+<h1>코딩 어드벤처</h1>
+<div id="coding-challenge">
+  <h2 id="mission-title"></h2>
+  <p id="mission-description"></p>
+  <div id="editor-container"></div>
+  <button id="run-code">코드 실행</button>
+  <button id="submit-answer">답안 제출</button>
+  <h3>힌트</h3>
+  <p id="hint"></p>
+  <h3>결과</h3>
+  <pre id="output"></pre>
+</div>
 
-  <!-- Modal structure -->
-  <div id="modal" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <p id="modal-text"></p>
-    </div>
+<!-- Modal structure -->
+<div id="modal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <p id="modal-text"></p>
   </div>
+</div>
+
+<!-- Loading spinner -->
+<div id="loading-spinner" class="loading-spinner" style="display: none;">
+  <div class="spinner"></div>
+</div>
 </body>
 </html>

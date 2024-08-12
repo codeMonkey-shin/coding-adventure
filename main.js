@@ -1,26 +1,4 @@
-const challenges = [
-  {
-    title: "미션: 변수에 값을 할당하고 출력하기",
-    description: "출력 결과가 <strong>Hello, World!</strong>가 되어야 합니다.",
-    expectedOutput: "Hello, World!",
-    initialCode: `// 변수에 값을 할당하고 출력하세요\nlet message = "";\nconsole.log(message);`,
-    hint: "변수는 데이터를 저장하는 데 사용됩니다. 변수에 문자열을 할당하고 console.log()를 사용하여 출력하세요."
-  },
-  {
-    title: "미션: 숫자 더하기",
-    description: "출력 결과가 <strong>15</strong>가 되어야 합니다.",
-    expectedOutput: "15",
-    initialCode: `// 두 숫자의 합을 출력하세요\nlet a = ;\nlet b = ;\nconsole.log(a + b);`,
-    hint: "변수를 선언하고 숫자를 할당한 후, 두 변수를 더하여 결과를 출력하세요."
-  },
-  {
-    title: "미션: 조건문 사용하기",
-    description: "출력 결과가 <strong>x is greater than 5</strong>가 되어야 합니다.",
-    expectedOutput: "x is greater than 5",
-    initialCode: `// 조건문을 사용하여 x가 5보다 크면 메시지를 출력하세요\nlet x = 10;\nif ( ) {\n  console.log("x is greater than 5");\n}`,
-    hint: "if 조건문을 사용하여 x가 5보다 큰지 확인한 후, 조건이 참일 때 메시지를 출력하세요."
-  }
-];
+const API_URL = 'https://f2d8c4d406cd083a-e8089672-34cb-46f4-8648-9c77ee9a78f7.functions.codemonkey.run';
 
 let currentChallengeIndex = 0;
 let editor;
@@ -28,7 +6,7 @@ let editor;
 require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.28.1/min/vs' }});
 require(['vs/editor/editor.main'], function() {
   editor = monaco.editor.create(document.getElementById('editor-container'), {
-    value: challenges[0].initialCode,
+    value: '',
     language: 'javascript',
     theme: 'vs-dark'
   });
@@ -37,62 +15,117 @@ require(['vs/editor/editor.main'], function() {
 });
 
 function loadChallenge(index) {
-  const challenge = challenges[index];
-  document.getElementById('mission-title').textContent = challenge.title;
-  document.getElementById('mission-description').innerHTML = challenge.description;
-  document.getElementById('hint').textContent = challenge.hint;
-  editor.setValue(challenge.initialCode);
-  document.getElementById('output').innerHTML = '';
+  toggleLoadingSpinner(true);
+  fetch(`${API_URL}/challenge/${index}`)
+      .then(response => {
+        if (response.status === 429) {
+          throw new Error('Too Many Requests');
+        }
+        return response.json();
+      })
+      .then(data => {
+        document.getElementById('mission-title').textContent = data.title;
+        document.getElementById('mission-description').innerHTML = data.description;
+        document.getElementById('hint').textContent = data.hint;
+        editor.setValue(data.initialCode);
+        toggleLoadingSpinner(false);
+      })
+      .catch(error => {
+        toggleLoadingSpinner(false);
+        handleApiError(error);
+      });
 }
 
 document.getElementById('run-code').addEventListener('click', () => {
   const code = editor.getValue();
   try {
-    console.clear();
-    const outputContainer = document.getElementById('output');
-    outputContainer.innerHTML = '';
-    console.log = (message) => {
-      outputContainer.innerHTML += message + '<br>';
-    };
-    eval(code);
-
-    if (outputContainer.textContent.trim() === challenges[currentChallengeIndex].expectedOutput) {
-      currentChallengeIndex++;
-      if (currentChallengeIndex < challenges.length) {
-        showModal('성공! 다음 미션으로 이동합니다.');
-        loadChallenge(currentChallengeIndex);
-      } else {
-        showModal('축하합니다! 모든 미션을 완료했습니다. 당신은 네카라쿠배에 입사할 자격을 얻었습니다.', true);
-      }
-    } else {
-      showModal('미션 실패. 코드를 다시 확인해 주세요.');
-    }
-  } catch (e) {
-    document.getElementById('output').innerHTML = `Error: ${e.message}`;
+    const result = eval(code);
+    document.getElementById('output').textContent = String(result);
+  } catch (error) {
+    document.getElementById('output').textContent = `Error: ${error.message}`;
   }
 });
 
+document.getElementById('submit-answer').addEventListener('click', () => {
+  const code = editor.getValue();
+  toggleLoadingSpinner(true);
+  fetch(`${API_URL}/validate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, challengeIndex: currentChallengeIndex })
+  })
+      .then(response => {
+        if (response.status === 429) {
+          throw new Error('Too Many Requests');
+        }
+        return response.json();
+      })
+      .then(data => {
+        toggleLoadingSpinner(false);
+        if (data.success) {
+          currentChallengeIndex++;
+          if (currentChallengeIndex < 12) {  // assuming there are 12 challenges
+            showModal('성공! 다음 미션으로 이동합니다.');
+            loadChallenge(currentChallengeIndex);
+          } else {
+            showModal('축하합니다! 모든 미션을 완료했습니다. 당신은 네카라쿠배에 입사할 자격을 얻었습니다.', true);
+          }
+        } else {
+          showModal('미션 실패. 코드를 다시 확인해 주세요.');
+        }
+      })
+      .catch(error => {
+        toggleLoadingSpinner(false);
+        handleApiError(error);
+      });
+});
+
+// Function to display a modal with a given message and optional redirect.
 function showModal(message, redirect = false) {
+  // Get references to the modal and its text element.
   const modal = document.getElementById('modal');
   const modalText = document.getElementById('modal-text');
-  modalText.textContent = message;
-  modal.style.display = 'block';
 
-  if (redirect) {
-    document.querySelector('.close').addEventListener('click', () => {
+  // Set the modal's text to the provided message.
+  modalText.textContent = message;
+
+  // Make the modal visible, and add/remove appropriate CSS classes for animations.
+  modal.style.display = 'block';
+  modal.classList.add('show');
+  modal.classList.remove('hide');
+
+  // Function to close the modal. It adds a hide class for animation purposes, then hides it and optionally redirects.
+  function closeModal() {
+    modal.classList.add('hide');
+    modal.classList.remove('show');
+    setTimeout(() => {
       modal.style.display = 'none';
-      window.location.href = 'https://recruit.navercorp.com/rcrt/list.do';
-    });
+      if (redirect) {
+        window.location.href = 'https://recruit.navercorp.com/rcrt/list.do';
+      }
+    }, 500);
+  }
+
+  // Attach event listeners to close the modal when clicking on the close button or outside of it.
+  document.querySelector('.close').addEventListener('click', closeModal);
+  window.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      closeModal();
+    }
+  });
+}
+
+function toggleLoadingSpinner(show) {
+  const spinner = document.getElementById('loading-spinner');
+  spinner.style.display = show ? 'flex' : 'none';
+}
+
+function handleApiError(error) {
+  if (error.message === 'Too Many Requests') {
+    showModal('너무 많이 요청했습니다. 1분 후에 다시 시도해 주세요.');
   } else {
-    document.querySelector('.close').addEventListener('click', () => {
-      modal.style.display = 'none';
-    });
+    showModal(`Error: ${error.message}`);
   }
 }
 
-window.addEventListener('click', (event) => {
-  const modal = document.getElementById('modal');
-  if (event.target === modal) {
-    modal.style.display = 'none';
-  }
-});
+const fibonacci=(n,a=0,b=1)=>n<=1?n:fibonacci(--n,b,a+b);
