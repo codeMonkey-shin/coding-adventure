@@ -1,4 +1,4 @@
-const API_URL = 'https://f2d8c4d406cd083a-e8089672-34cb-46f4-8648-9c77ee9a78f7.functions.codemonkey.run';
+const API_URL = 'https://f2d8c4d406cd083a-e8089672-34cb-46f4-8648-.functions.codemonkey.site';
 
 let currentChallengeIndex = 0;
 let editor;
